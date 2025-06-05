@@ -6,11 +6,14 @@ import './sensei-theme.css';
 const App: React.FC = () => {
     return (
         <Router>
-            <div>
+            {/* Splash background and overlay */}
+            <div className="sensei-splash-bg"></div>
+            <div className="sensei-splash-overlay"></div>
+            <div style={{ position: 'relative', zIndex: 2 }}>
                 <header className="sensei-header">
-                    SenseiSearch
+                    <span role="img" aria-label="ninja">🥷</span> SenseiSearch
                     <div className="sensei-subheader">
-                        Find images by text or upload, powered by AI
+                        Find images by text or upload, powered by AI <span role="img" aria-label="spark">✨</span>
                     </div>
                 </header>
                 <Switch>
