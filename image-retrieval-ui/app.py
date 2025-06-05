@@ -5,12 +5,12 @@ from pydantic import BaseModel
 from typing import List
 import torch
 import os
-
+import numpy as np
 from peft import PeftModel
 from transformers import CLIPProcessor, CLIPModel
 import faiss
 from PIL import Image
-import numpy as np
+from scipy.spatial import distance
 
 # --- Model and Data Loading ---
 
@@ -62,6 +62,15 @@ full_lora_image_paths = [os.path.join(image_save_dir, os.path.basename(p)) for p
 def make_image_url(local_path):
     filename = os.path.basename(local_path)
     return f"/images/{filename}"
+
+# --- OOD Metric Setup (run once at startup) ---
+train_embs = np.array(lora_image_embeddings)
+mean = train_embs.mean(axis=0)
+cov = np.cov(train_embs, rowvar=False)
+inv_cov = np.linalg.inv(cov + 1e-6 * np.eye(cov.shape[0]))
+
+def mahalanobis_score(query_emb, mean, inv_cov):
+    return float(distance.mahalanobis(query_emb, mean, inv_cov))
 
 # --- FastAPI App Setup ---
 
@@ -116,7 +125,7 @@ def retrieve_similar_images(image: Image.Image, model, index, text_data, image_p
             valid_indices.append(idx)
             if len(valid_indices) >= top_k:
                 break
-    return [valid_indices]
+    return [valid_indices], query_emb
 
 # --- API Endpoints ---
 
@@ -125,33 +134,45 @@ def search_by_text(data: TextQuery):
     indices = retrieve_images_by_text_return_indices(
         data.query, lora_index, full_lora_image_paths, lora_text_data, lora_model, top_k=data.top_k
     )
-    results = [
-        {
+    # Get the embedding for the query
+    inputs = clip_processor(text=[data.query], return_tensors="pt").to(DEVICE)
+    with torch.no_grad():
+        query_emb = lora_model.get_text_features(**inputs)
+    query_emb = query_emb.cpu().numpy().astype("float32")[0]
+    ood_score = mahalanobis_score(query_emb, mean, inv_cov)
+
+    results = []
+    for i, idx in enumerate(indices[0]):
+        img_emb = lora_image_embeddings[idx]
+        img_ood_score = mahalanobis_score(img_emb, mean, inv_cov)
+        results.append({
             "rank": i+1,
             "caption": lora_text_data[idx],
-            "path": make_image_url(full_lora_image_paths[idx])
-        }
-        for i, idx in enumerate(indices[0])
-    ]
-    return {"results": results}
+            "path": make_image_url(full_lora_image_paths[idx]),
+            "ood_score": img_ood_score
+        })
+    return {"results": results, "query_ood_score": ood_score}
 
 @app.post("/search_by_image")
 async def search_by_image(image: UploadFile = File(...)):
     from io import BytesIO
     img_bytes = await image.read()
     img = Image.open(BytesIO(img_bytes)).convert("RGB")
-    indices = retrieve_similar_images(
+    indices, query_emb = retrieve_similar_images(
         img, lora_model, lora_index, lora_text_data, full_lora_image_paths, top_k=5
     )
-    results = [
-        {
+    ood_score = mahalanobis_score(query_emb[0], mean, inv_cov)
+    results = []
+    for i, idx in enumerate(indices[0]):
+        img_emb = lora_image_embeddings[idx]
+        img_ood_score = mahalanobis_score(img_emb, mean, inv_cov)
+        results.append({
             "rank": i+1,
             "caption": lora_text_data[idx],
-            "path": make_image_url(full_lora_image_paths[idx])
-        }
-        for i, idx in enumerate(indices[0])
-    ]
-    return {"results": results}
+            "path": make_image_url(full_lora_image_paths[idx]),
+            "ood_score": img_ood_score
+        })
+    return {"results": results, "query_ood_score": ood_score}
 
 if __name__ == "__main__":
     import uvicorn

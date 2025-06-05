@@ -1,0 +1,65 @@
+body {
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  margin: 0;
+  min-height: 100vh;
+}
+
+.sensei-header {
+  background: #22223b;
+  color: #f2e9e4;
+  padding: 2rem 0 1rem 0;
+  text-align: center;
+  font-size: 2.5rem;
+  letter-spacing: 0.1em;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(34,34,59,0.08);
+}
+
+.sensei-subheader {
+  color: #9a8c98;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.sensei-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(34,34,59,0.08);
+  padding: 1.5rem;
+  margin: 1.5rem auto;
+  max-width: 600px;
+}
+
+.sensei-btn {
+  background: #4a4e69;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.6em 1.2em;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sensei-btn:hover {
+  background: #22223b;
+}
+
+input[type="text"], input[type="file"] {
+  border: 1px solid #9a8c98;
+  border-radius: 6px;
+  padding: 0.5em;
+  margin-right: 0.5em;
+  font-size: 1rem;
+}
+
+img.thumb {
+  max-width: 180px;
+  max-height: 180px;
+  border-radius: 8px;
+  box-shadow: 0 1px 6px rgba(34,34,59,0.08);
+  margin-bottom: 0.5em;
+}
