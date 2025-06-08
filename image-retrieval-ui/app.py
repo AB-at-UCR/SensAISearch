@@ -11,6 +11,7 @@ from transformers import CLIPProcessor, CLIPModel
 import faiss
 from PIL import Image
 from scipy.spatial import distance
+import pillow_heif  # <-- Add HEIC/HEIF support
 
 # --- Model and Data Loading ---
 
@@ -127,6 +128,21 @@ def retrieve_similar_images(image: Image.Image, model, index, text_data, image_p
                 break
     return [valid_indices], query_emb
 
+def load_image_with_heic_support(img_bytes):
+    from io import BytesIO
+    try:
+        img = Image.open(BytesIO(img_bytes)).convert("RGB")
+    except Exception:
+        # Try HEIC/HEIF
+        heif_file = pillow_heif.read_heif(BytesIO(img_bytes))
+        img = Image.frombytes(
+            heif_file.mode,
+            heif_file.size,
+            heif_file.data,
+            "raw"
+        ).convert("RGB")
+    return img
+
 # --- API Endpoints ---
 
 @app.post("/search_by_text")
@@ -155,9 +171,8 @@ def search_by_text(data: TextQuery):
 
 @app.post("/search_by_image")
 async def search_by_image(image: UploadFile = File(...)):
-    from io import BytesIO
     img_bytes = await image.read()
-    img = Image.open(BytesIO(img_bytes)).convert("RGB")
+    img = load_image_with_heic_support(img_bytes)
     indices, query_emb = retrieve_similar_images(
         img, lora_model, lora_index, lora_text_data, full_lora_image_paths, top_k=5
     )

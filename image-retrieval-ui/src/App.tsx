@@ -11,7 +11,7 @@ const App: React.FC = () => {
             <div className="sensei-splash-overlay"></div>
             <div style={{ position: 'relative', zIndex: 2 }}>
                 <header className="sensei-header">
-                    <span role="img" aria-label="ninja">🥷</span> SenseiSearch
+                    <span role="img" aria-label="ninja">🥷</span> Sens-AI-Search
                     <div className="sensei-subheader">
                         Find images by text or upload, powered by AI <span role="img" aria-label="spark">✨</span>
                     </div>

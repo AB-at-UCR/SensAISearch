@@ -4,7 +4,7 @@
   "description": "A web application for image retrieval based on user-uploaded images.",
   "main": "src/index.tsx",
   "scripts": {
-    "start": "react-scripts start",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
