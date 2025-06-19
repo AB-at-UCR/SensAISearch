@@ -1,3 +1,9 @@
 myenv/
 
 .DS_Store
+
+.hf_cache/
+
+.cache/
+
+data/
